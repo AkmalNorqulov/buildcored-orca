@@ -77,11 +77,11 @@ with FaceLandmarker.create_from_options(options) as landmarker:
             else:
                 # Sensitivity thresholds (0.15 = 15% deviation)
                 if current_ratio < base_ratio * 0.85:
-                    status, color = "Playing music", (0, 255, 0)
-                    pygame.mixer.music.play()
-                elif current_ratio > base_ratio * 1.15:
                     status, color = "Music is paused", (0, 0, 255)
                     pygame.mixer.music.pause()
+                elif current_ratio > base_ratio * 1.15:
+                    status, color = "Playing music", (0, 255, 0)
+                    pygame.mixer.music.play()
                 else:
                     status, color = " ", (255, 255, 255)
 
