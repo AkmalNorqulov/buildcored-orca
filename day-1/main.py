@@ -70,33 +70,39 @@ with FaceLandmarker.create_from_options(options) as landmarker:
             # --- 5. Detection Logic ---
             # If current ratio is significantly smaller than average -> UP
             # If current ratio is significantly larger than average -> DOWN
-            
+            sensitivity = 0.15
+            lower_limit = base_ratio * (1 - sensitivity)
+            upper_limit = base_ratio * (1 + sensitivity)
+
             if len(ratio_history) < history_size:
-                status = f"Learning Face... {int(len(ratio_history))}%"
-                color = (0, 165, 255) # Orange
+                status = f"Learning Face... {len(ratio_history)}%"
+                color = (0, 165, 255) 
             else:
-                # Sensitivity thresholds (0.15 = 15% deviation)
-                if current_ratio < base_ratio * 0.85:
-                    status, color = "Music is paused", (0, 0, 255)
-                    pygame.mixer.music.pause()
-                elif current_ratio > base_ratio * 1.15:
-                    status, color = "Playing music", (0, 255, 0)
-                    pygame.mixer.music.play()
+                if current_ratio < lower_limit:
+                    status, color = "PAUSED (Tilt Up)", (0, 0, 255)
+                    if pygame.mixer.music.get_busy(): pygame.mixer.music.pause()
+                elif current_ratio > upper_limit:
+                    status, color = "PLAYING (Tilt Down)", (0, 255, 0)
+                    if not pygame.mixer.music.get_busy(): pygame.mixer.music.play()
                 else:
-                    status, color = " ", (255, 255, 255)
+                    status, color = "NEUTRAL", (255, 255, 255)
 
             # --- 6. Visuals ---
-            cv2.putText(frame, status, (30, 50), 
-                        cv2.FONT_HERSHEY_DUPLEX, 1, color, 2)
+            overlay = frame.copy()
+            cv2.rectangle(overlay, (10, 10), (320, 150), (0, 0, 0), -1)
+            cv2.addWeighted(overlay, 0.6, frame, 0.4, 0, frame)
+
+            # Text settings
+            font = cv2.FONT_HERSHEY_SIMPLEX
+            fs, thick = 0.6, 1
             
-            # Optional: Draw a line showing the 'nose-to-chin' axis for debugging
-            h, w, _ = frame.shape
-            p_bridge = (int(landmarks[1].x * w), int(landmarks[1].y * h))
-            p_tip = (int(landmarks[4].x * w), int(landmarks[4].y * h))
-            p_chin = (int(landmarks[152].x * w), int(landmarks[152].y * h))
+            cv2.putText(frame, f"Current Ratio: {current_ratio:.3f}", (20, 40), font, fs, (255, 255, 255), thick)
+            cv2.putText(frame, f"Base (Avg):    {base_ratio:.3f}", (20, 70), font, fs, (200, 200, 200), thick)
+            cv2.putText(frame, f"Lower Thr:     {lower_limit:.3f}", (20, 100), font, fs, (0, 0, 255), thick)
+            cv2.putText(frame, f"Upper Thr:     {upper_limit:.3f}", (20, 130), font, fs, (0, 255, 0), thick)
             
-            cv2.line(frame, p_bridge, p_tip, (255, 0, 0), 2)
-            cv2.line(frame, p_tip, p_chin, (0, 255, 255), 2)
+            # Big status text
+            cv2.putText(frame, status, (30, frame.shape[0] - 30), cv2.FONT_HERSHEY_DUPLEX, 1, color, 2)
 
         cv2.imshow('Adaptive Head Tilt Detector', frame)
         
