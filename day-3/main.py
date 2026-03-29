@@ -166,9 +166,7 @@ with vision.HandLandmarker.create_from_options(options) as detector:
                     cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 255, 255), 2)
         cv2.imshow("Frame", frame)
 
-        key = cv2.waitKey(1) & 0xFF
-        if key == ord("q"): 
-            break
+        
 
 cam.release()
 cv2.destroyAllWindows()
